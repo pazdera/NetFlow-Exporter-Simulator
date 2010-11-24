@@ -17,23 +17,21 @@
  * along with nfgen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 
 #include <sys/stat.h>
-// #include <sys/types.h>
-
 
 #include <string.h>
 #include <time.h>
 
-#define TCP_PROTO 6
-#define UDP_PROTO 17
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "nfgen.h"
 
 #define MIN_FLOW_DURATION 1
 #define MAX_FLOW_DURATION 60
@@ -47,36 +45,35 @@
 #define NETFLOW_RECORD_SIZE 48
 
 #define NUMBER_OF_ADDRESSES 4
-in_addr_t addresses[NUMBER_OF_ADDRESSES] =
+const char *addresses[NUMBER_OF_ADDRESSES] =
 {
-//   "127.0.0.1",
-//   "192.168.1.100",
-//   "192.168.1.101",
-//   "192.168.1.102"
-  0x7F000001, /* 127.0.0.1 */
-  0xC0A80164, /* 192.168.1.100 */
-  0xC0A80165, /* 192.168.1.101 */
-  0xC0A80166  /* 192.168.1.102 */
+  "127.0.0.1",
+  "192.168.1.100",
+  "192.168.1.101",
+  "192.168.1.102"
+//   0x7F000001, /* 127.0.0.1 */
+//   0xC0A80164, /* 192.168.1.100 */
+//   0xC0A80165, /* 192.168.1.101 */
+//   0xC0A80166  /* 192.168.1.102 */
 };
 
 
 
-// in_addr_t convertAddress(char *addressInDotNotation)
-// {
-//   in_addr structureForConversionResult;
-// 
-//   if (inet_aton(addressInDotNotation, &structureForConversionResult) != 1)
-//   {
-//     perror("Address conversion failed.");
-//   }
-// 
-//   return structureForConversionResult.s_addr;
-// }
+in_addr_t convertAddress(const char *addressInDotNotation)
+{
+  in_addr_t conversionResult;
+  if (inet_pton(AF_INET, addressInDotNotation, (void *) &conversionResult) != 1)
+  {
+    perror("Address conversion failed.");
+  }
+
+  return conversionResult;
+}
 
 in_addr_t generateRandomAddress()
 {
   /* This could be more sophisticated */
-  return addresses[(1 + rand()) % NUMBER_OF_ADDRESSES];
+  return convertAddress(addresses[(1 + rand()) % NUMBER_OF_ADDRESSES]);
 }
 
 in_port_t generateRandomPortNumber()
@@ -89,47 +86,13 @@ char generateRandomTCPFlags()
   return rand() % 255;
 }
 
-struct
-{
-  uint16_t version;       /* 5 */
-  uint16_t count;         /* The number of records in the PDU */
-  uint32_t sysUpTime;     /* Current time in millisecs since router booted */
-  uint32_t unixSecs;      /* Current seconds since 0000 UTC 1970 */
-  uint32_t unixNsecs;     /* Residual nanoseconds since 0000 UTC 1970 */
-  uint32_t flowSequence;  /* Seq counter of total flows seen */
-  uint8_t  engineType;    /* Type of flow switching engine (RP,VIP,etc.) */
-  uint8_t  engineId;      /* Slot number of the flow switching engine */
-  uint16_t reserved;
-} header;
-
-struct
-{
-  uint32_t srcAddr;     /* Source IP Address */
-  uint32_t dstAddr;     /* Destination IP Address */
-  uint32_t nextHop;     /* Next hop router's IP Address */
-  uint16_t input;       /* Input interface index */
-  uint16_t output;      /* Output interface index */
-  uint32_t dPkts;       /* Packets sent in Duration */
-  uint32_t dOctets;     /* Octets sent in Duration. */
-  uint32_t first;       /* SysUptime at start of flow */
-  uint32_t last;        /* and of last packet of flow */
-  uint16_t srcPort;     /* TCP/UDP source port number or equivalent */
-  uint16_t dstPort;     /* TCP/UDP destination port number or equiv */
-  uint8_t  pad;
-  uint8_t  tcpFlags;    /* Cumulative OR of tcp flags */
-  uint8_t  prot;        /* IP protocol, e.g., 6=TCP, 17=UDP, ... */
-  uint8_t  tos;         /* IP Type-of-Service */
-  uint16_t srcAs;       /* originating AS of source address */
-  uint16_t dstAs;       /* originating AS of destination address */
-  uint8_t  srcMask;     /* source address prefix mask bits */
-  uint8_t  dstMask;     /* destination address prefix mask bits */
-  uint16_t drops;
-} record;
-
 size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime)
 {
   time_t currentTime = time(0);
 
+  struct netflowRecord record;
+  struct netflowHeader header;
+  
   for (int flow = 0;flow < numberOfFlows; flow++)
   {
     // Setup record
@@ -149,8 +112,8 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
     record.srcPort = htons(generateRandomPortNumber());
     record.dstPort = htons(generateRandomPortNumber());
     record.pad = 0;
-    record.prot = rand() % 2 ? TCP_PROTO : UDP_PROTO;
-    record.tcpFlags = record.prot == TCP_PROTO ? generateRandomTCPFlags() : 0;
+    record.prot = rand() % 2 ? IPPROTO_TCP : IPPROTO_UDP;
+    record.tcpFlags = record.prot == IPPROTO_TCP ? generateRandomTCPFlags() : 0;
     record.tos = 0;
     record.srcAs = 0;
     record.dstAs = 0;
