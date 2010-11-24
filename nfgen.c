@@ -95,14 +95,19 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
   
   for (int flow = 0;flow < numberOfFlows; flow++)
   {
-    // Setup record
-    record.srcAddr = htonl(generateRandomAddress());
-    record.dstAddr = htonl(generateRandomAddress());
+    // Addresses are already in network byte order
+    record.srcAddr = generateRandomAddress();
+    record.dstAddr = generateRandomAddress();
+
     record.nextHop = 0;
     record.input = 0;
     record.output = 0;
-    record.dPkts = htonl(100);
-    record.dOctets = htonl(120*8);
+
+    // Some random flow lengths
+    record.dPkts = rand() % 100000;
+    record.dOctets = record.dPkts * (rand() % 300);
+    record.dPkts = htonl(record.dPkts);
+    record.dOctets = htonl(record.dOctets);
 
     record.first = (currentTime - systemStartTime - (MIN_FLOW_DURATION + rand()) % MAX_FLOW_DURATION)*1000;
     record.last = record.first + (rand() % MAX_FLOW_DURATION)*1000;
@@ -111,7 +116,9 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
 
     record.srcPort = htons(generateRandomPortNumber());
     record.dstPort = htons(generateRandomPortNumber());
+    
     record.pad = 0;
+    
     record.prot = rand() % 2 ? IPPROTO_TCP : IPPROTO_UDP;
     record.tcpFlags = record.prot == IPPROTO_TCP ? generateRandomTCPFlags() : 0;
     record.tos = 0;
@@ -119,22 +126,29 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
     record.dstAs = 0;
     record.srcMask = 0;
     record.dstMask = 0;
+    
     record.drops = 0;
 
     memcpy(buffer + NETFLOW_HEADER_SIZE + flow*NETFLOW_RECORD_SIZE, &record, NETFLOW_RECORD_SIZE);
   }
 
-  // Setup header
+  /* Setup header */
   header.version      = 5;
   header.count        = numberOfFlows;
-  header.sysUpTime    = htonl((currentTime - systemStartTime) * 1000);
+  
+  header.sysUpTime    = htonl((currentTime - systemStartTime) * 1000); // Time since the program was run is used
   header.unixSecs     = htonl(currentTime);
-  header.unixNsecs    = htonl(rand() % (1000000000 - 1)); // nanoseconds
+
+  // Random amount of residual nanoseconds is generated for testing purposes
+  header.unixNsecs    = htonl(rand() % (1000000000 - 1));
+
+  // NIY TODO
   header.flowSequence = 0;
 
-  memcpy(buffer, &header, NETFLOW_HEADER_SIZE);
+  memcpy(buffer, &header, sizeof(struct netflowHeader));
 
-  return NETFLOW_HEADER_SIZE + numberOfFlows*NETFLOW_RECORD_SIZE;
+  // returns size of generated pdu
+  return sizeof(struct netflowHeader) + numberOfFlows*sizeof(struct netflowRecord);
 }
 
 int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
@@ -181,7 +195,7 @@ int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
 
 int main(int argc, char **argv)
 {
-  in_addr_t remoteAddress = 0x7f000001; // 127.0.0.1
+  in_addr_t remoteAddress = convertAddress("147.229.176.19"); //0x7f000001; // 127.0.0.1
   in_port_t remotePort = DEST_PORT;
 
   time_t systemStartTime = time(0);
