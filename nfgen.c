@@ -39,11 +39,11 @@
 #define SRC_PORT 10000
 #define DEST_PORT 2055
 
-#define PRG_SEED 5
+/* Not really necessary but it makes stuff clear */
+#define DEFAULT_SEED 1
 
-#define NETFLOW_HEADER_SIZE 24
-#define NETFLOW_RECORD_SIZE 48
-
+/* Here goes some addresses that will be used as source and destination in netflow records. */
+/* TODO Maybe load them from a file? */
 #define NUMBER_OF_ADDRESSES 4
 const char *addresses[NUMBER_OF_ADDRESSES] =
 {
@@ -51,17 +51,12 @@ const char *addresses[NUMBER_OF_ADDRESSES] =
   "192.168.1.100",
   "192.168.1.101",
   "192.168.1.102"
-//   0x7F000001, /* 127.0.0.1 */
-//   0xC0A80164, /* 192.168.1.100 */
-//   0xC0A80165, /* 192.168.1.101 */
-//   0xC0A80166  /* 192.168.1.102 */
 };
-
-
 
 in_addr_t convertAddress(const char *addressInDotNotation)
 {
   in_addr_t conversionResult;
+
   if (inet_pton(AF_INET, addressInDotNotation, (void *) &conversionResult) != 1)
   {
     perror("Address conversion failed.");
@@ -70,9 +65,10 @@ in_addr_t convertAddress(const char *addressInDotNotation)
   return conversionResult;
 }
 
+/* TODO This could be more sophisticated */
+/* Is 'generate' really the right name? */
 in_addr_t generateRandomAddress()
 {
-  /* This could be more sophisticated */
   return convertAddress(addresses[(1 + rand()) % NUMBER_OF_ADDRESSES]);
 }
 
@@ -86,19 +82,23 @@ char generateRandomTCPFlags()
   return rand() % 255;
 }
 
+/* Returns size of the packet in buffer.
+   Size of buffer must be greater then 24 + 30*48 = 1464,
+   otherwise expect some segfaults. */
 size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime)
 {
   time_t currentTime = time(0);
 
   struct netflowRecord record;
   struct netflowHeader header;
-  
+
   for (int flow = 0;flow < numberOfFlows; flow++)
   {
     // Addresses are already in network byte order
     record.srcAddr = generateRandomAddress();
     record.dstAddr = generateRandomAddress();
 
+    // NIY
     record.nextHop = 0;
     record.input = 0;
     record.output = 0;
@@ -109,6 +109,7 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
     record.dPkts = htonl(record.dPkts);
     record.dOctets = htonl(record.dOctets);
 
+    // Flow duration
     record.first = (currentTime - systemStartTime - (MIN_FLOW_DURATION + rand()) % MAX_FLOW_DURATION)*1000;
     record.last = record.first + (rand() % MAX_FLOW_DURATION)*1000;
     record.first = htonl(record.first);
@@ -116,17 +117,20 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
 
     record.srcPort = htons(generateRandomPortNumber());
     record.dstPort = htons(generateRandomPortNumber());
-    
+
     record.pad = 0;
-    
+
+    // Transport protocol (TCP|UDP)
     record.prot = rand() % 2 ? IPPROTO_TCP : IPPROTO_UDP;
     record.tcpFlags = record.prot == IPPROTO_TCP ? generateRandomTCPFlags() : 0;
+
+    // NIY
     record.tos = 0;
     record.srcAs = 0;
     record.dstAs = 0;
     record.srcMask = 0;
     record.dstMask = 0;
-    
+
     record.drops = 0;
 
     memcpy(buffer + NETFLOW_HEADER_SIZE + flow*NETFLOW_RECORD_SIZE, &record, NETFLOW_RECORD_SIZE);
@@ -151,6 +155,8 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
   return sizeof(struct netflowHeader) + numberOfFlows*sizeof(struct netflowRecord);
 }
 
+/* TODO It's not ideal to open new socket for every packet sent.
+   Also the code is pretty stupid. This function has to go asap. */
 int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
 {
   int udtSocketFileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
@@ -184,7 +190,7 @@ int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
   struct sockaddr_in sa;
   memset(&sa, 0, sizeof(sa));
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = htonl(addr);
+  sa.sin_addr.s_addr = addr;
   sa.sin_port = htons(port);
   ssize_t nsend = sendto(udtSocketFileDescriptor, buff, nbytes, 0, (const struct sockaddr *) &sa, sizeof(sa));
 
@@ -195,11 +201,11 @@ int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
 
 int main(int argc, char **argv)
 {
-  in_addr_t remoteAddress = convertAddress("147.229.176.19"); //0x7f000001; // 127.0.0.1
+  in_addr_t remoteAddress = convertAddress("147.229.176.14"); ////127.0.0.1
   in_port_t remotePort = DEST_PORT;
 
   time_t systemStartTime = time(0);
-  unsigned int flowsGenerated = 0;
+  unsigned int numberOfFlows = 0;
 
   int seed = PRG_SEED;
   srand(seed);
@@ -210,8 +216,8 @@ int main(int argc, char **argv)
 
   while(1)
   {
-    flowsGenerated = (1 + rand()) % 30;
-    pduSize = makeNetflowPacket(buffer, flowsGenerated, systemStartTime);
+    numberOfFlows = (1 + rand()) % 30;
+    pduSize = makeNetflowPacket(buffer, numberOfFlows, systemStartTime);
 
     fprintf(stderr, "%i\n", udpSend(remoteAddress, remotePort, buffer, pduSize));
 
