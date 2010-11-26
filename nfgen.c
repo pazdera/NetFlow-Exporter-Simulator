@@ -37,8 +37,8 @@
 #define MIN_FLOW_DURATION 1
 #define MAX_FLOW_DURATION 60
 
+/* Local port number */
 #define SRC_PORT 10000
-#define DEST_PORT 2055
 
 /* Not really necessary but it makes stuff clear */
 #define DEFAULT_ADDRESS "127.0.0.1"
@@ -88,7 +88,7 @@ char generateRandomTCPFlags()
 /* Returns size of the packet in buffer.
    Size of buffer must be greater then 24 + 30*48 = 1464,
    otherwise expect some segfaults. */
-size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime)
+size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent)
 {
   time_t currentTime = time(0);
 
@@ -140,8 +140,8 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
   }
 
   /* Setup header */
-  header.version      = 5;
-  header.count        = numberOfFlows;
+  header.version      = htons(5);
+  header.count        = htons(numberOfFlows);
 
   header.sysUpTime    = htonl((currentTime - systemStartTime) * 1000); // Time since the program was run is used
   header.unixSecs     = htonl(currentTime);
@@ -149,8 +149,7 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
   // Random amount of residual nanoseconds is generated for testing purposes
   header.unixNsecs    = htonl(rand() % (1000000000 - 1));
 
-  // NIY TODO
-  header.flowSequence = 0;
+  header.flowSequence = htonl(totalFlowsSent);
 
   memcpy(buffer, &header, sizeof(struct netFlowHeader));
 
@@ -257,6 +256,7 @@ int main(int argc, char **argv)
 
   time_t systemStartTime = time(0);
   unsigned int numberOfFlows = 0;
+  unsigned int totalFlowsSent = 0;
 
   /* Initialize generator */
   srand(arguments.seed);
@@ -269,7 +269,8 @@ int main(int argc, char **argv)
   while(1)
   {
     numberOfFlows = (1 + rand()) % 30;
-    pduSize = makeNetflowPacket(buffer, numberOfFlows, systemStartTime);
+    totalFlowsSent += numberOfFlows;
+    pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
     /* FIXME Some more information would be nice */
     if (udpSend(arguments.address, arguments.port, buffer, pduSize) == pduSize)
