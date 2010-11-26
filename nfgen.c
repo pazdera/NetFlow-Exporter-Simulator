@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdio.h>
 
 #include <sys/stat.h>
@@ -40,6 +41,8 @@
 #define DEST_PORT 2055
 
 /* Not really necessary but it makes stuff clear */
+#define DEFAULT_ADDRESS "127.0.0.1"
+#define DEFAULT_PORT 2055
 #define DEFAULT_SEED 1
 
 /* Here goes some addresses that will be used as source and destination in netflow records. */
@@ -89,8 +92,8 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
 {
   time_t currentTime = time(0);
 
-  struct netflowRecord record;
-  struct netflowHeader header;
+  struct netFlowRecord record;
+  struct netFlowHeader header;
 
   for (int flow = 0;flow < numberOfFlows; flow++)
   {
@@ -133,13 +136,13 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
 
     record.drops = 0;
 
-    memcpy(buffer + NETFLOW_HEADER_SIZE + flow*NETFLOW_RECORD_SIZE, &record, NETFLOW_RECORD_SIZE);
+    memcpy(buffer + sizeof(struct netFlowHeader) + flow*sizeof(struct netFlowRecord), &record, sizeof(struct netFlowRecord));
   }
 
   /* Setup header */
   header.version      = 5;
   header.count        = numberOfFlows;
-  
+
   header.sysUpTime    = htonl((currentTime - systemStartTime) * 1000); // Time since the program was run is used
   header.unixSecs     = htonl(currentTime);
 
@@ -149,10 +152,10 @@ size_t makeNetflowPacket(char *buffer, int numberOfFlows, time_t systemStartTime
   // NIY TODO
   header.flowSequence = 0;
 
-  memcpy(buffer, &header, sizeof(struct netflowHeader));
+  memcpy(buffer, &header, sizeof(struct netFlowHeader));
 
   // returns size of generated pdu
-  return sizeof(struct netflowHeader) + numberOfFlows*sizeof(struct netflowRecord);
+  return sizeof(struct netFlowHeader) + numberOfFlows*sizeof(struct netFlowRecord);
 }
 
 /* TODO It's not ideal to open new socket for every packet sent.
@@ -199,30 +202,88 @@ int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
   return nsend;
 }
 
+struct cliArguments parseCliArguments(int argc, char **argv)
+{
+  struct cliArguments arguments;
+  arguments.address = convertAddress(DEFAULT_ADDRESS);
+  arguments.port    = DEFAULT_PORT;
+  arguments.seed    = DEFAULT_SEED;
+  arguments.help    = 0;
+
+  int option;
+  /* TODO Some validation would be nice ... */
+  while ((option = getopt(argc, argv, "a:p:s:h")) != -1)
+  {
+    switch (option)
+    {
+    case 'a':
+      arguments.address = convertAddress(optarg);
+      break;
+    case 'p':
+      arguments.port = atoi(optarg);
+      break;
+    case 's':
+      arguments.seed = atoi(optarg);
+      break;
+    case 'h':
+      arguments.help = 1;
+      break;
+    default: /* '?' */
+      arguments.help = 1;
+    }
+  }
+
+  return arguments;
+}
+
+/* TODO A helpful help could be more useful */
+void usage(char **argv)
+{
+  fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed]\n", argv[0]);
+  fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
+  fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
+  fprintf(stderr, "  -s generator seed (default %i)\n", DEFAULT_SEED);
+}
+
 int main(int argc, char **argv)
 {
-  in_addr_t remoteAddress = convertAddress("147.229.176.14"); ////127.0.0.1
-  in_port_t remotePort = DEST_PORT;
+  struct cliArguments arguments = parseCliArguments(argc, argv);
+
+  if (arguments.help)
+  {
+    usage(argv);
+    return EXIT_SUCCESS;
+  }
 
   time_t systemStartTime = time(0);
   unsigned int numberOfFlows = 0;
 
-  int seed = PRG_SEED;
-  srand(seed);
+  /* Initialize generator */
+  srand(arguments.seed);
 
-  char buffer[1480];
-  memset(buffer, 0, 1480);
-  size_t pduSize = 0;
+  /* FIXME Magic numbers, really? */
+  char buffer[1464];
+  memset(buffer, 0, 1464);
+  size_t pduSize;
 
   while(1)
   {
     numberOfFlows = (1 + rand()) % 30;
     pduSize = makeNetflowPacket(buffer, numberOfFlows, systemStartTime);
 
-    fprintf(stderr, "%i\n", udpSend(remoteAddress, remotePort, buffer, pduSize));
+    /* FIXME Some more information would be nice */
+    if (udpSend(arguments.address, arguments.port, buffer, pduSize) == pduSize)
+    {
+      fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
+    }
+    else
+    {
+      fprintf(stderr, "Sending failed.\n");
+    }
 
+    /* TODO Interval ought to be more versatile */
     sleep(rand() % 3);
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }

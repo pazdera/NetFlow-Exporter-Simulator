@@ -20,7 +20,15 @@
 #ifndef _NFGEN__H
 #define _NFGEN__H
 
-struct netflowHeader
+struct cliArguments
+{
+  in_addr_t address;
+  in_port_t port;
+  int seed;
+  int help;
+};
+
+struct netFlowHeader
 {
   uint16_t version;       /* 5 */
   uint16_t count;         /* The number of records in the PDU */
@@ -33,7 +41,7 @@ struct netflowHeader
   uint16_t reserved;
 };
 
-struct netflowRecord
+struct netFlowRecord
 {
   uint32_t srcAddr;     /* Source IP Address */
   uint32_t dstAddr;     /* Destination IP Address */
