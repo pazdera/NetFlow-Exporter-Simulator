@@ -91,6 +91,7 @@ char generateRandomTCPFlags()
 size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent)
 {
   time_t currentTime = time(0);
+  time_t systemUptime = currentTime - systemStartTime;
 
   struct netFlowRecord record;
   struct netFlowHeader header;
@@ -113,7 +114,14 @@ size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numb
     record.dOctets = htonl(record.dOctets);
 
     // Flow duration
-    record.first = (currentTime - systemStartTime - (MIN_FLOW_DURATION + rand()) % MAX_FLOW_DURATION)*1000;
+    if (systemUptime < MAX_FLOW_DURATION)
+    {
+      record.first = 0;
+    }
+    else
+    {
+      record.first = (systemUptime - (MIN_FLOW_DURATION + rand()) % MAX_FLOW_DURATION)*1000;
+    }
     record.last = record.first + (rand() % MAX_FLOW_DURATION)*1000;
     record.first = htonl(record.first);
     record.last = htonl(record.last);
