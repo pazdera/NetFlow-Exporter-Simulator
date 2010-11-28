@@ -281,7 +281,7 @@ int main(int argc, char **argv)
     pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
     /* FIXME Some more information would be nice */
-    if (udpSend(arguments.address, arguments.port, buffer, pduSize) == pduSize)
+    if (udpSend(arguments.address, arguments.port, buffer, 0) == pduSize) // Sending zero packets
     {
       fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
     }
