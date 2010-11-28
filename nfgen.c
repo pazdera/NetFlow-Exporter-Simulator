@@ -52,7 +52,7 @@ const char *addresses[NUMBER_OF_ADDRESSES] =
 {
   "127.0.0.1",
   "192.168.1.100",
-  "192.168.1.101",
+  "192.168.1.1",
   "192.168.1.102"
 };
 
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
     pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
     /* FIXME Some more information would be nice */
-    if (udpSend(arguments.address, arguments.port, buffer, 0) == 0) // Sending zero packets
+    if (udpSend(arguments.address, arguments.port, buffer, pduSize) == pduSize) // Sending zero packets
     {
       fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
     }
