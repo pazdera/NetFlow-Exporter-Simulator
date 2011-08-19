@@ -40,7 +40,7 @@
 /* Local port number */
 #define SRC_PORT 10000
 
-/* Not really necessary but it makes stuff clear */
+/* Default CLI arguments */
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT 2055
 #define DEFAULT_SEED 1
@@ -205,17 +205,48 @@ void udpClose(int udpSocket)
     close(udpSocket);
 }
 
+FILE* openOutputFile(char* path)
+{
+    FILE* file = fopen(path, "w+b");
+
+    if (file == NULL)
+    {
+        perror("Unable to write to output file.");
+        exit(EXIT_FAILURE);
+    }
+
+    return file;
+}
+
+void writeToOutputFile(FILE* file, void* datagram, size_t datagramSize)
+{
+    fwrite(datagram, sizeof(char), datagramSize, file);
+    fflush(file);
+
+    if (ferror(file))
+    {
+        perror("Cannot write into output file.");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void closeOutputFile(FILE* file)
+{
+    fclose(file);
+}
+
 struct cliArguments parseCliArguments(int argc, char **argv)
 {
   struct cliArguments arguments;
-  arguments.address = convertAddress(DEFAULT_ADDRESS);
-  arguments.port    = DEFAULT_PORT;
-  arguments.seed    = DEFAULT_SEED;
-  arguments.help    = 0;
+  arguments.address    = convertAddress(DEFAULT_ADDRESS);
+  arguments.port       = DEFAULT_PORT;
+  arguments.seed       = DEFAULT_SEED;
+  arguments.outputFile = NULL;
+  arguments.help       = 0;
 
   int option;
   /* TODO Some validation would be nice ... */
-  while ((option = getopt(argc, argv, "a:p:s:h")) != -1)
+  while ((option = getopt(argc, argv, "a:p:s:o:h")) != -1)
   {
     switch (option)
     {
@@ -228,6 +259,10 @@ struct cliArguments parseCliArguments(int argc, char **argv)
     case 's':
       arguments.seed = atoi(optarg);
       break;
+    case 'o':
+      arguments.outputFile = (char*) malloc((strlen(optarg) + 1)*sizeof(char));
+      strcpy(arguments.outputFile, optarg);
+      break;
     case 'h':
       arguments.help = 1;
       break;
@@ -239,13 +274,22 @@ struct cliArguments parseCliArguments(int argc, char **argv)
   return arguments;
 }
 
+void freeCliArguments(struct cliArguments arguments)
+{
+    if (arguments.outputFile != NULL)
+    {
+        free(arguments.outputFile);
+    }
+}
+
 /* TODO A helpful help could be more useful. */
 void usage(char **argv)
 {
-  fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed]\n", argv[0]);
+  fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed] [-o path]\n", argv[0]);
   fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
   fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
   fprintf(stderr, "  -s generator seed (default %i)\n", DEFAULT_SEED);
+  fprintf(stderr, "  -o output file\n");
 }
 
 int main(int argc, char **argv)
@@ -271,6 +315,7 @@ int main(int argc, char **argv)
   size_t pduSize;
 
   int udpSocket = udpInitialize();
+  FILE* outputFile = (arguments.outputFile != NULL) ? openOutputFile(arguments.outputFile) : NULL;
 
   while(1)
   {
@@ -281,6 +326,11 @@ int main(int argc, char **argv)
     /* FIXME Some more information would be nice */
     if (udpSend(udpSocket, arguments.address, arguments.port, buffer, pduSize) == pduSize)
     {
+      if (arguments.outputFile != NULL)
+      {
+        writeToOutputFile(outputFile, buffer, pduSize);
+      }
+
       fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
     }
     else
@@ -292,7 +342,13 @@ int main(int argc, char **argv)
     sleep(rand() % 3);
   }
 
+  if (outputFile != NULL)
+  {
+    closeOutputFile(outputFile);
+  }
+
   udpClose(udpSocket);
+  freeCliArguments(arguments);
 
   return EXIT_SUCCESS;
 }

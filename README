@@ -7,9 +7,10 @@ BUILD
 
 USAGE
     ./nfgen [-a address] [-p port] [-s seed]
-        -a collector addres (default 127.0.0.1)
-        -p dest port (default 2055)
+        -a collector address (default 127.0.0.1)
+        -p destination port (default 2055)
         -s generator seed (default 1)
+        -o output file
 
 EXAMPLES
     ./nfgen -a 147.229.176.14 -p2055 -s5
