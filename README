@@ -1,15 +1,30 @@
 DESCRIPTION
-  A simple utility suitable for testing NetFlow applications. It generates
-  pseudo-random NetFlow packets and sends them to specified collector.
+    A simple utility suitable for testing NetFlow applications. It generates
+    pseudo-random NetFlow packets and sends them to specified collector.
 
 BUILD
-  make
+    make
 
 USAGE
-  ./nfgen [-a address] [-p port] [-s seed]
-    -a collector addres (default 127.0.0.1)
-    -p dest port (default 2055)
-    -s generator seed (default 1)
+    ./nfgen [-a address] [-p port] [-s seed]
+        -a collector addres (default 127.0.0.1)
+        -p dest port (default 2055)
+        -s generator seed (default 1)
 
 EXAMPLES
-  ./nfgen -a 147.229.176.14 -p2055 -s5
+    ./nfgen -a 147.229.176.14 -p2055 -s5
+
+TESTING
+    Testing of this utility can be done using netcat. Make nc listen on the
+    specified UDP port
+
+        nc -ul 2055 > recieved
+
+    and run nfgen with -o option.
+
+        ./nfgen -a 127.0.0.1 -p 2055 -o sent
+
+    nfgen will dump everything it sends to a file and then diff the files
+
+        diff sent recieved
+
