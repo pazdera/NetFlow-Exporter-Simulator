@@ -165,48 +165,44 @@ size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numb
   return sizeof(struct netFlowHeader) + numberOfFlows*sizeof(struct netFlowRecord);
 }
 
-/* TODO It's not ideal to open new socket for every packet sent.
-   Also the code is pretty stupid. This function has to go asap. */
-int udpSend(in_addr_t addr, in_port_t port, void *buff, size_t nbytes)
+int udpInitialize()
 {
-  int udtSocketFileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+    int udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
-  if (udtSocketFileDescriptor <= 0)
-  {
-    perror("Unable to create socket.");
-    exit(EXIT_FAILURE);
-  }
+    if (udpSocket <= 0)
+    {
+        perror("Unable to create socket.");
+        exit(EXIT_FAILURE);
+    }
 
-  struct sockaddr_in socketAddress;
-  memset(&socketAddress, 0, sizeof(socketAddress));
-  socketAddress.sin_family = AF_INET;
-  socketAddress.sin_addr.s_addr = htonl(0);
-  socketAddress.sin_port = htons(SRC_PORT);
+    return udpSocket;
+}
 
-  if (bind(udtSocketFileDescriptor, (const struct sockaddr *) &socketAddress, sizeof(socketAddress)) == -1)
-  {
-    perror("Unable to bind.");
-    exit(EXIT_FAILURE);
-  }
+size_t udpSend(int udpSocket, in_addr_t address, in_port_t port, void *message, size_t messageSize)
+{
+    struct stat info;
+    if (fstat(udpSocket, &info) != 0)
+    {
+        perror("Descriptor is invalid.");
+        exit(EXIT_FAILURE);
+    }
 
-  // Now we're ready to go.
-  struct stat info;
-  if (fstat(udtSocketFileDescriptor, &info) != 0)
-  {
-    perror("Descriptor is invalid.");
-    exit(EXIT_FAILURE);
-  }
+    struct sockaddr_in remoteAddress;
+    memset(&remoteAddress, 0, sizeof(remoteAddress));
 
-  struct sockaddr_in sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = addr;
-  sa.sin_port = htons(port);
-  ssize_t nsend = sendto(udtSocketFileDescriptor, buff, nbytes, 0, (const struct sockaddr *) &sa, sizeof(sa));
+    remoteAddress.sin_family = AF_INET;
+    remoteAddress.sin_addr.s_addr = address;
+    remoteAddress.sin_port = htons(port);
 
-  close(udtSocketFileDescriptor);
+    ssize_t numberOfBytesSend = sendto(udpSocket, message, messageSize, 0,
+                                       (const struct sockaddr *) &remoteAddress, sizeof(remoteAddress));
 
-  return nsend;
+    return numberOfBytesSend;
+}
+
+void udpClose(int udpSocket)
+{
+    close(udpSocket);
 }
 
 struct cliArguments parseCliArguments(int argc, char **argv)
@@ -243,7 +239,7 @@ struct cliArguments parseCliArguments(int argc, char **argv)
   return arguments;
 }
 
-/* TODO A helpful help could be more useful */
+/* TODO A helpful help could be more useful. */
 void usage(char **argv)
 {
   fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed]\n", argv[0]);
@@ -274,6 +270,8 @@ int main(int argc, char **argv)
   memset(buffer, 0, 1464);
   size_t pduSize;
 
+  int udpSocket = udpInitialize();
+
   while(1)
   {
     numberOfFlows = (1 + rand()) % 30;
@@ -281,7 +279,7 @@ int main(int argc, char **argv)
     pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
     /* FIXME Some more information would be nice */
-    if (udpSend(arguments.address, arguments.port, buffer, pduSize) == pduSize)
+    if (udpSend(udpSocket, arguments.address, arguments.port, buffer, pduSize) == pduSize)
     {
       fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
     }
@@ -293,6 +291,8 @@ int main(int argc, char **argv)
     /* TODO Interval ought to be more versatile */
     sleep(rand() % 3);
   }
+
+  udpClose(udpSocket);
 
   return EXIT_SUCCESS;
 }
