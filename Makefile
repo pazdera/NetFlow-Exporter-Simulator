@@ -1,7 +1,7 @@
 EXECUTABLE_NAME=nfgen
 INSTALL_PATH=/usr/local/bin
 
-.PHONY build clean install
+.PHONY: build clean install
 
 build:
 	gcc -Wall -pedantic -std=c99 nfgen.c -o $(EXECUTABLE_NAME)
