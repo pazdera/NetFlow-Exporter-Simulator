@@ -32,10 +32,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "netflow.h"
 #include "nfgen.h"
-
-#define MAX_NETFLOW_PDU_SIZE 1464
-#define MAX_NETFLOW_RECORDS 30
 
 #define MIN_FLOW_DURATION 1
 #define MAX_FLOW_DURATION 60
@@ -96,8 +94,8 @@ size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numb
   time_t currentTime = time(0);
   time_t systemUptime = currentTime - systemStartTime;
 
-  struct netFlowRecord record;
-  struct netFlowHeader header;
+  struct netflowRecord record;
+  struct netflowHeader header;
 
   for (int flow = 0;flow < numberOfFlows; flow++)
   {
@@ -147,7 +145,7 @@ size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numb
 
     record.drops = 0;
 
-    memcpy(buffer + sizeof(struct netFlowHeader) + flow*sizeof(struct netFlowRecord), &record, sizeof(struct netFlowRecord));
+    memcpy(buffer + sizeof(struct netflowHeader) + flow*sizeof(struct netflowRecord), &record, sizeof(struct netflowRecord));
   }
 
   /* Setup header */
@@ -162,10 +160,10 @@ size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numb
 
   header.flowSequence = htonl(totalFlowsSent);
 
-  memcpy(buffer, &header, sizeof(struct netFlowHeader));
+  memcpy(buffer, &header, sizeof(struct netflowHeader));
 
   // returns size of generated pdu
-  return sizeof(struct netFlowHeader) + numberOfFlows*sizeof(struct netFlowRecord);
+  return sizeof(struct netflowHeader) + numberOfFlows*sizeof(struct netflowRecord);
 }
 
 int udpInitialize()
@@ -297,8 +295,6 @@ void usage(char **argv)
 
 int main(int argc, char **argv)
 {
-  int* i = (int*)5;
-  *i = 6;
   struct cliArguments arguments = parseCliArguments(argc, argv);
 
   if (arguments.help)
