@@ -15,6 +15,11 @@ USAGE
 EXAMPLES
     ./nfgen -a 147.229.176.14 -p2055 -s5
 
+TODO
+    * separate udp*() functions into udp.c module
+    * create module for handling ip addresses conversion and loading from
+      files and move converAddress() here from netflow.c
+
 TESTING
     Testing of this utility can be done using netcat. Make nc listen on the
     specified UDP port
