@@ -1,18 +1,27 @@
-SOURCE_DIR=src
+CC=gcc
+CFLAGS=-c -g -Wall -pedantic -std=c99
+LDFLAGS=
+EXECUTABLE=nfgen
 
-EXECUTABLE_NAME=nfgen
-INSTALL_PATH=/usr/local/bin/
+SOURCES_DIR=src/
+SOURCES=$(addprefix $(SOURCES_DIR), nfgen.c netflow.c)
+
+OBJECTS=$(SOURCES:.c=.o)
+
 
 .PHONY: build debug clean install
 
-build:
-	gcc -Wall -pedantic -std=c99 $(SOURCE_DIR)/nfgen.c -o $(EXECUTABLE_NAME)
+all: $(EXECUTABLE)
+	
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-debug:
-	gcc -g -Wall -pedantic -std=c99 $(SOURCE_DIR)/nfgen.c -o $(EXECUTABLE_NAME)
+.c.o:
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(EXECUTABLE_NAME)
+	rm -f $(OBJECTS) $(EXECUTABLE_NAME)
 
-install: build
-	cp $(EXECUTABLE_NAME) $(INSTALL_PATH)
+install: $(EXECUTABLE)
+	cp $(EXECUTABLE) $(INSTALL_PATH)
+

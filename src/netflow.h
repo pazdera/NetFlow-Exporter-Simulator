@@ -20,6 +20,9 @@
 #ifndef _NETFLOW__H_
 #define _NETFLOW__H_
 
+#include <stdint.h>
+#include <time.h>
+
 #define MAX_NETFLOW_PDU_SIZE 1464
 #define MAX_NETFLOW_RECORDS 30
 
@@ -59,5 +62,8 @@ struct netflowRecord
     uint8_t  dstMask;     /* destination address prefix mask bits */
     uint16_t drops;
 };
+
+size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent);
+
 
 #endif
