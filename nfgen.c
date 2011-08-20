@@ -34,6 +34,9 @@
 
 #include "nfgen.h"
 
+#define MAX_NETFLOW_PDU_SIZE 1464
+#define MAX_NETFLOW_RECORDS 30
+
 #define MIN_FLOW_DURATION 1
 #define MAX_FLOW_DURATION 60
 
@@ -294,6 +297,8 @@ void usage(char **argv)
 
 int main(int argc, char **argv)
 {
+  int* i = (int*)5;
+  *i = 6;
   struct cliArguments arguments = parseCliArguments(argc, argv);
 
   if (arguments.help)
@@ -309,9 +314,8 @@ int main(int argc, char **argv)
   /* Initialize generator */
   srand(arguments.seed);
 
-  /* FIXME Magic numbers, really? */
-  char buffer[1464];
-  memset(buffer, 0, 1464);
+  char buffer[MAX_NETFLOW_PDU_SIZE];
+  memset(buffer, 0, MAX_NETFLOW_PDU_SIZE);
   size_t pduSize;
 
   int udpSocket = udpInitialize();
@@ -319,7 +323,7 @@ int main(int argc, char **argv)
 
   while(1)
   {
-    numberOfFlows = (1 + rand()) % 30;
+    numberOfFlows = (1 + rand()) % MAX_NETFLOW_RECORDS;
     totalFlowsSent += numberOfFlows;
     pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
