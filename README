@@ -25,7 +25,7 @@ TESTING
 
         ./nfgen -a 127.0.0.1 -p 2055 -o sent
 
-    nfgen will dump everything it sends to a file and then diff the files
+    nfgen will dump everything it sends to a file. Then diff the files and see.
 
         diff sent recieved
 
