@@ -17,6 +17,9 @@
  * along with nfgen.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _UDP__H_
+#define _UDP__H_
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -58,4 +61,6 @@ size_t udpSend(int udpSocket, in_addr_t address, in_port_t port, void *message, 
  * @param[in] udpSocket Socket file descriptor
  */
 void udpClose(int udpSocket);
+
+#endif
 
