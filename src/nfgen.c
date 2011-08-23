@@ -33,6 +33,7 @@
 #include "netflow.h"
 #include "nfgen.h"
 #include "udp.h"
+#include "binaryoutput.h"
 
 /* Local port number */
 #define SRC_PORT 10000
@@ -41,36 +42,6 @@
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT 2055
 #define DEFAULT_SEED time(NULL)
-
-FILE* openOutputFile(char* path)
-{
-    FILE* file = fopen(path, "w+b");
-
-    if (file == NULL)
-    {
-        perror("Unable to write to output file.");
-        exit(EXIT_FAILURE);
-    }
-
-    return file;
-}
-
-void writeToOutputFile(FILE* file, void* datagram, size_t datagramSize)
-{
-    fwrite(datagram, sizeof(char), datagramSize, file);
-    fflush(file);
-
-    if (ferror(file))
-    {
-        perror("Cannot write into output file.");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void closeOutputFile(FILE* file)
-{
-    fclose(file);
-}
 
 struct cliArguments parseCliArguments(int argc, char **argv)
 {
