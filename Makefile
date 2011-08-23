@@ -20,8 +20,8 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLE_NAME)
+	rm -f $(OBJECTS) $(EXECUTABLE)
 
-install: $(EXECUTABLE)
-	cp $(EXECUTABLE) $(INSTALL_PATH)
+#install: $(EXECUTABLE)
+#	cp $(EXECUTABLE) $(INSTALL_PATH)
 
