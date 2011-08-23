@@ -70,7 +70,7 @@ char generateRandomTCPFlags()
 /* Returns size of the packet in buffer.
    Size of buffer must be greater then 24 + 30*48 = 1464,
    otherwise expect some segfaults. */
-size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent)
+size_t makeRandomNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent)
 {
   time_t currentTime = time(0);
   time_t systemUptime = currentTime - systemStartTime;
