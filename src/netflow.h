@@ -26,6 +26,7 @@
 #define MAX_NETFLOW_PDU_SIZE 1464
 #define MAX_NETFLOW_RECORDS 30
 
+/** NetFlow version 5 PDU header */
 struct netflowHeader
 {
     uint16_t version;       /* 5 */
@@ -39,6 +40,7 @@ struct netflowHeader
     uint16_t reserved;
 };
 
+/** NetFlow version 5 record */
 struct netflowRecord
 {
     uint32_t srcAddr;     /* Source IP Address */
@@ -63,7 +65,29 @@ struct netflowRecord
     uint16_t drops;
 };
 
-size_t makeNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent);
+/**
+ * Make pseudo-random NetFlow PDU
+ *
+ * Creates semi-random NetFlow v5 into \c buffer.
+ * Some attributes are random and some are computed and
+ * set so they make sense in the stream comming from this
+ * exporter.
+ *
+ * Size of the resulting PDU can reach up to 1464 bytes
+ * (24B for header + up to 30 records, each of 48B = 1464).
+ * The buffer size must be greater or equal, otherwise
+ * expect some segfaults.
+ *
+ * @param[out] buffer Buffer for NetFlow PDU
+ * @param[in]  systemStartTime Start of NetFlow exporter (this program) \
+ *                             This value is later used to determine flow durations.
+ * @param[in]  numberOfFLows How many records should be generated into the PDU
+ * @param[in]  totalFlowsSent Total number of flows sent from \c systemStartTime \
+ *                            by this exporter including \c current numberOfFlows
+ *
+ * @return Final PDU size stored in \c buffer
+ */
+size_t makeRandomNetflowPacket(char *buffer, time_t systemStartTime, unsigned int numberOfFlows, unsigned int totalFlowsSent);
 
 
 #endif

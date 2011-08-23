@@ -157,7 +157,7 @@ int main(int argc, char **argv)
   {
     numberOfFlows = (1 + rand()) % MAX_NETFLOW_RECORDS;
     totalFlowsSent += numberOfFlows;
-    pduSize = makeNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
+    pduSize = makeRandomNetflowPacket(buffer, systemStartTime, numberOfFlows, totalFlowsSent);
 
     /* FIXME Some more information would be nice */
     if (udpSend(udpSocket, arguments.address, arguments.port, buffer, pduSize) == pduSize)
