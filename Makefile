@@ -4,7 +4,7 @@ LDFLAGS=
 EXECUTABLE=nfgen
 
 SOURCES_DIR=src/
-SOURCES=$(addprefix $(SOURCES_DIR), nfgen.c netflow.c)
+SOURCES=$(addprefix $(SOURCES_DIR), nfgen.c netflow.c udp.c)
 
 OBJECTS=$(SOURCES:.c=.o)
 

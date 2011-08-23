@@ -22,8 +22,6 @@
 #include <getopt.h>
 #include <stdio.h>
 
-#include <sys/stat.h>
-
 #include <string.h>
 #include <time.h>
 
@@ -34,7 +32,7 @@
 
 #include "netflow.h"
 #include "nfgen.h"
-
+#include "udp.h"
 
 /* Local port number */
 #define SRC_PORT 10000
@@ -42,47 +40,7 @@
 /* Default CLI arguments */
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define DEFAULT_PORT 2055
-#define DEFAULT_SEED 1
-
-int udpInitialize()
-{
-    int udpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if (udpSocket <= 0)
-    {
-        perror("Unable to create socket.");
-        exit(EXIT_FAILURE);
-    }
-
-    return udpSocket;
-}
-
-size_t udpSend(int udpSocket, in_addr_t address, in_port_t port, void *message, size_t messageSize)
-{
-    struct stat info;
-    if (fstat(udpSocket, &info) != 0)
-    {
-        perror("Descriptor is invalid.");
-        exit(EXIT_FAILURE);
-    }
-
-    struct sockaddr_in remoteAddress;
-    memset(&remoteAddress, 0, sizeof(remoteAddress));
-
-    remoteAddress.sin_family = AF_INET;
-    remoteAddress.sin_addr.s_addr = address;
-    remoteAddress.sin_port = htons(port);
-
-    ssize_t numberOfBytesSend = sendto(udpSocket, message, messageSize, 0,
-                                       (const struct sockaddr *) &remoteAddress, sizeof(remoteAddress));
-
-    return numberOfBytesSend;
-}
-
-void udpClose(int udpSocket)
-{
-    close(udpSocket);
-}
+#define DEFAULT_SEED time(NULL)
 
 FILE* openOutputFile(char* path)
 {
@@ -167,7 +125,7 @@ void usage(char **argv)
   fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed] [-o path]\n", argv[0]);
   fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
   fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
-  fprintf(stderr, "  -s generator seed (default %i)\n", DEFAULT_SEED);
+  fprintf(stderr, "  -s generator seed (default randomized)\n");
   fprintf(stderr, "  -o output file\n");
 }
 
@@ -230,3 +188,4 @@ int main(int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
+
