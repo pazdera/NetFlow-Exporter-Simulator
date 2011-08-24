@@ -22,8 +22,44 @@
 
 #include <stdio.h>
 
+/**
+ * Open output file and return the handle
+ *
+ * The file is open in binary mode "w+b". It calls
+ * exit() on error.
+ *
+ * TODO
+ *   Calling exit is a bad thing. Only main module should
+ *   be able to control the application runtime.
+ *
+ * @param[in] path Absolute/relative file path
+ * @return Open file handle
+ */
 FILE* openOutputFile(char* path);
+
+/**
+ * Write datagram into file
+ *
+ * Writes \c datagramSize bytes from \c datagram buffer
+ * into \c file and flushes the stream.
+ *
+ * It calls exit() upon error.
+ * TODO Fix that.
+ *
+ * @param[in] file         Open file (@see openOutputFile())
+ * @param[in] datagram     Data to be stored into the file
+ * @param[in] datagramSize Number of bytes to write
+ *
+ * @return void
+ */
 void writeToOutputFile(FILE* file, void* datagram, size_t datagramSize);
+
+/**
+ * Close open file handle
+ * @param[in] file Open file
+ *
+ * @return void
+ */
 void closeOutputFile(FILE* file);
 
 #endif
