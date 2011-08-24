@@ -36,3 +36,11 @@ in_addr_t convertAddress(const char *addressInDotNotation)
 
   return conversionResult;
 }
+
+
+int readHostsFromFile(char* filePath, in_addr_t** hosts)
+{
+    /* TODO */
+    return -1;
+}
+
