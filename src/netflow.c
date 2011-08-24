@@ -23,6 +23,7 @@
 #include <arpa/inet.h>
 
 #include "netflow.h"
+#include "hosts.h"
 
 #define MIN_FLOW_DURATION 1
 #define MAX_FLOW_DURATION 60
@@ -37,18 +38,6 @@ const char *addresses[NUMBER_OF_ADDRESSES] =
   "192.168.1.101",
   "192.168.1.102"
 };
-
-in_addr_t convertAddress(const char *addressInDotNotation)
-{
-  in_addr_t conversionResult;
-
-  if (inet_pton(AF_INET, addressInDotNotation, (void *) &conversionResult) != 1)
-  {
-    perror("Address conversion failed.");
-  }
-
-  return conversionResult;
-}
 
 /* TODO This could be more sophisticated */
 /* Is 'generate' really the right name? */

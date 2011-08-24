@@ -33,6 +33,7 @@
 #include "netflow.h"
 #include "nfgen.h"
 #include "udp.h"
+#include "hosts.h"
 #include "binaryoutput.h"
 
 /* Local port number */
