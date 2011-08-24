@@ -22,6 +22,16 @@
 
 #include <arpa/inet.h>
 
+/**
+ * Convert ip address from string to in_addr_t
+ *
+ * Prints warning on error and returns 0.
+ * FIXME Possible issue: Zero is also valid IP!
+ *
+ * @param [in] addressInDotNotation IP to convert in string form
+ *
+ * @return Converted IP or 0 on failure
+ */
 in_addr_t convertAddress(const char *addressInDotNotation);
 
 #endif
