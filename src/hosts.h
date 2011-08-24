@@ -34,4 +34,31 @@
  */
 in_addr_t convertAddress(const char *addressInDotNotation);
 
+/**
+ * Load hosts from file
+ *
+ * Reads hosts file and returns an array of ip addresses.
+ * The file must be in the following format
+ *
+ *     # Comment
+ *     127.0.0.1
+ *     192.168.0.1 # Also a comment
+ *
+ *     10.0.0.1
+ *
+ * That means one address per line, blank lines, spaces and
+ * everything after '#' up to the end of the line is ignored.
+ * 
+ * TODO Test with Windows CR-LF line endings.
+ *
+ * Returned array is allocated within the function and is not
+ * free'd. Your responsibility is to correctly release the
+ * memory.
+ *
+ * @param[in] filePath Location of the file
+ * @param[out] hosts Pointer to an array of in_addr_t
+ *
+ * @return Number of addresses read or -1 on error
+ */
+int readHostsFromFile(char* filePath, in_addr_t** hosts);
 #endif
