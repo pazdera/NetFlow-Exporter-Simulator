@@ -6,7 +6,7 @@ BUILD
     make
 
 USAGE
-    ./nfgen [-a address] [-p port] [-s seed]
+    ./nfgen [-a address] [-p port] [-s seed] [-o file]
         -a collector address (default 127.0.0.1)
         -p destination port (default 2055)
         -s generator seed (default 1)
@@ -14,11 +14,6 @@ USAGE
 
 EXAMPLES
     ./nfgen -a 147.229.176.14 -p2055 -s5
-
-TODO
-    * separate udp*() functions into udp.c module
-    * create module for handling ip addresses conversion and loading from
-      files and move converAddress() here from netflow.c
 
 TESTING
     Testing of this utility can be done using netcat. Make nc listen on the
