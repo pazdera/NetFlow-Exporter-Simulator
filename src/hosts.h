@@ -20,6 +20,8 @@
 #ifndef _HOSTS__H_
 #define _HOSTS__H_
 
+#include "errors.h"
+
 #include <arpa/inet.h>
 
 /**
@@ -51,6 +53,8 @@ in_addr_t convertAddress(const char *addressInDotNotation);
  * 
  * TODO Test with Windows CR-LF line endings.
  *
+ * Badly formed addresses are ignored with a warning on stderr.
+ *
  * Returned array is allocated within the function and is not
  * free'd. Your responsibility is to correctly release the
  * memory.
@@ -60,5 +64,5 @@ in_addr_t convertAddress(const char *addressInDotNotation);
  *
  * @return Number of addresses read or -1 on error
  */
-int readHostsFromFile(char* filePath, in_addr_t** hosts);
+error_t readHostsFromFile(char* filePath, in_addr_t** hosts);
 #endif
