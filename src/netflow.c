@@ -43,7 +43,10 @@ const char *addresses[NUMBER_OF_ADDRESSES] =
 /* Is 'generate' really the right name? */
 in_addr_t generateRandomAddress()
 {
-  return convertAddress(addresses[(1 + rand()) % NUMBER_OF_ADDRESSES]);
+  in_addr_t address;
+
+  convertAddress(addresses[(1 + rand()) % NUMBER_OF_ADDRESSES], &address);
+  return address;
 }
 
 in_port_t generateRandomPortNumber()
