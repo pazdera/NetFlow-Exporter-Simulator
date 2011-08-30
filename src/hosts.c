@@ -104,16 +104,21 @@ static bool isWhiteSpace(char character);
 static bool startsComment(char character);
 
 
-in_addr_t convertAddress(const char *addressInDotNotation)
+error_t convertAddress(const char *addressInDotNotation, in_addr_t* address)
 {
-  in_addr_t conversionResult = 0;
+    error_t status;
 
-  if (inet_pton(AF_INET, addressInDotNotation, (void *) &conversionResult) != 1)
-  {
-    perror("Address conversion failed.");
-  }
+    status = inet_pton(AF_INET, addressInDotNotation, (void *) address);
+    if (status <= 1)
+    {
+        if (status == 0)
+        {
+            return EINVAL;
+        }
+        return EAFNOSUPPORT;
+    }
 
-  return conversionResult;
+  return EOK;
 }
 
 error_t readHostsFromFile(char* filePath, in_addr_t** hosts)
