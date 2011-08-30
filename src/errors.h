@@ -30,12 +30,12 @@
  * available from errno.h. On top of that, EOK constant
  * was defined to signal no error was encountered.
  *
- * Frequently used:
+ * Frequently used standard errors:
  *   EOK
  *   EIO     i/o error
  *   EINVAL  invalid argument
  *   ENOENT  file doesn't exist
- *   NOMEM   not enough memory
+ *   ENOMEM  not enough memory
  *   EACCES  permission denied
  */
 typedef int error_t;
@@ -61,9 +61,10 @@ typedef int error_t;
  *
  * @return 0
  */
-inline void printError(error_t errorCode, char* message)
+static inline void printError(error_t errorCode, char* message)
 {
     error(0, errorCode, "%s", message);
 }
 
 #endif
+
