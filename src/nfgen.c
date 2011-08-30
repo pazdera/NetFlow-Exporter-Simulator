@@ -30,6 +30,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "errors.h"
 #include "netflow.h"
 #include "nfgen.h"
 #include "udp.h"
@@ -44,10 +45,24 @@
 #define DEFAULT_PORT 2055
 #define DEFAULT_SEED time(NULL)
 
+/* TODO A helpful help could be more useful. */
+void usage(int exitCode)
+{
+  fprintf(stderr, "Usage: nfgen [-a address] [-p port] [-s seed] [-o path]\n");
+  fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
+  fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
+  fprintf(stderr, "  -s generator seed (default randomized)\n");
+  fprintf(stderr, "  -o output file\n");
+
+  exit(exitCode);
+}
+
 struct cliArguments parseCliArguments(int argc, char **argv)
 {
+  error_t status = EOK;
+
   struct cliArguments arguments;
-  arguments.address    = convertAddress(DEFAULT_ADDRESS);
+  convertAddress(DEFAULT_ADDRESS, &arguments.address);
   arguments.port       = DEFAULT_PORT;
   arguments.seed       = DEFAULT_SEED;
   arguments.outputFile = NULL;
@@ -60,7 +75,12 @@ struct cliArguments parseCliArguments(int argc, char **argv)
     switch (option)
     {
     case 'a':
-      arguments.address = convertAddress(optarg);
+      status = convertAddress(optarg, &arguments.address);
+      if (status != EOK)
+      {
+        printError(status, "Invalid 'a' option argument");
+        usage(EXIT_FAILURE);
+      }    
       break;
     case 'p':
       arguments.port = atoi(optarg);
@@ -73,10 +93,11 @@ struct cliArguments parseCliArguments(int argc, char **argv)
       strcpy(arguments.outputFile, optarg);
       break;
     case 'h':
-      arguments.help = 1;
-      break;
-    default: /* '?' */
-      arguments.help = 1;
+        usage(EXIT_SUCCESS);
+        break;
+    default:
+        printError(0, "Unknown option");
+        usage(EXIT_FAILURE);
     }
   }
 
@@ -91,25 +112,11 @@ void freeCliArguments(struct cliArguments arguments)
     }
 }
 
-/* TODO A helpful help could be more useful. */
-void usage(char **argv)
-{
-  fprintf(stderr, "Usage: %s [-a address] [-p port] [-s seed] [-o path]\n", argv[0]);
-  fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
-  fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
-  fprintf(stderr, "  -s generator seed (default randomized)\n");
-  fprintf(stderr, "  -o output file\n");
-}
-
 int main(int argc, char **argv)
 {
+  error_t status;
+  
   struct cliArguments arguments = parseCliArguments(argc, argv);
-
-  if (arguments.help)
-  {
-    usage(argv);
-    return EXIT_SUCCESS;
-  }
 
   time_t systemStartTime = time(0);
   unsigned int numberOfFlows = 0;
