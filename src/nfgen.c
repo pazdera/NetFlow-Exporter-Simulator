@@ -114,8 +114,6 @@ void freeCliArguments(struct cliArguments arguments)
 
 int main(int argc, char **argv)
 {
-  error_t status;
-  
   struct cliArguments arguments = parseCliArguments(argc, argv);
 
   time_t systemStartTime = time(0);
@@ -146,7 +144,7 @@ int main(int argc, char **argv)
         writeToOutputFile(outputFile, buffer, pduSize);
       }
 
-      fprintf(stderr, "Packet of size %i with %i flows sent.\n", pduSize, numberOfFlows);
+      fprintf(stderr, "Packet of size %ld with %u flows sent.\n", pduSize, numberOfFlows);
     }
     else
     {
