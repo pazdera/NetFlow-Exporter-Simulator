@@ -41,15 +41,22 @@
 #define SRC_PORT 10000
 
 /* Default CLI arguments */
+
+/*Collector Address*/
 #define DEFAULT_ADDRESS "127.0.0.1"
+/*Collector Port*/
 #define DEFAULT_PORT 2055
+/* ???? */
 #define DEFAULT_SEED time(NULL)
+/*Output file*/
+#define DEFAULT_OUTPUTFILE ""
 
 /* TODO A helpful help could be more useful. */
 void usage(int exitCode)
 {
   fprintf(stderr, "Usage: nfgen [-a address] [-p port] [-s seed] [-o path]\n");
   fprintf(stderr, "  -a collector addres (default %s)\n", DEFAULT_ADDRESS);
+  /*what is %i in line 60? */
   fprintf(stderr, "  -p dest port (default %i)\n", DEFAULT_PORT);
   fprintf(stderr, "  -s generator seed (default randomized)\n");
   fprintf(stderr, "  -o output file\n");
@@ -60,39 +67,52 @@ void usage(int exitCode)
 struct cliArguments parseCliArguments(int argc, char **argv)
 {
   error_t status = EOK;
-
+  /*get CLI settings?*/
   struct cliArguments arguments;
+  /*convertAddress does what? */
   convertAddress(DEFAULT_ADDRESS, &arguments.address);
+  /*Our default port*/
   arguments.port       = DEFAULT_PORT;
+  /*Our seed I don't understand?*/
   arguments.seed       = DEFAULT_SEED;
+  /*Out NULL */
   arguments.outputFile = NULL;
+  /*Help 0? to not show help?*/
   arguments.help       = 0;
 
   int option;
   /* TODO Some validation would be nice ... */
+  /*What is argc, argv, and a:p:s:o:h? and why do want want them to be not equal -1?*/
   while ((option = getopt(argc, argv, "a:p:s:o:h")) != -1)
   {
     switch (option)
     {
     case 'a':
+      /*convertAddress is provided by some other import, 
+      we need to make sure the user entered an actual IP address*/
       status = convertAddress(optarg, &arguments.address);
       if (status != EOK)
       {
         printError(status, "Invalid 'a' option argument");
+        /*usage call?*/
+        /* EXIT_FAILURE universal? */
         usage(EXIT_FAILURE);
       }    
-      break;
+      break; /*kill the program*/
     case 'p':
+      /* What is atoi and what is optarg? */
       arguments.port = atoi(optarg);
-      break;
+      break; /*kill the program*/
     case 's':
       arguments.seed = atoi(optarg);
       break;
     case 'o':
+      /*malloc? */
       arguments.outputFile = (char*) malloc((strlen(optarg) + 1)*sizeof(char));
       strcpy(arguments.outputFile, optarg);
       break;
     case 'h':
+        /*After help, exit?*/
         usage(EXIT_SUCCESS);
         break;
     default:
