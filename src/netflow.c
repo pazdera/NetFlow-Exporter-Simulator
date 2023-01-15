@@ -30,9 +30,18 @@
 
 /* Here goes some addresses that will be used as source and destination in netflow records. */
 /* TODO Maybe load them from a file? */
-#define NUMBER_OF_ADDRESSES 4
+/*Looking up some random traffic will help if you want to simulate things like web traffic*/
+
+#define NUMBER_OF_ADDRESSES 9
 const char *addresses[NUMBER_OF_ADDRESSES] =
 {
+  /*external addresses*/
+  "142.251.32.110", /*google.com 1*/
+  "50.56.3.118", /*whatsupgold.com 2*/
+  "142.250.80.110", /*youtube.com 3*/
+  "35.186.224.25", /*spotify.com 4*/
+  "212.82.100.150", /*games.com 5*/
+  /*local addresses 4*/
   "127.0.0.1",
   "192.168.1.100",
   "192.168.1.101",
